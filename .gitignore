@@ -1,0 +1,16 @@
+# .gitignore
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradlew
+!gradlew.bat
+.idea
+*.iml
+*.ipr
+*.iws
+out/
+target/ # if using Maven
+logs/
+*.log
+.DS_Store
