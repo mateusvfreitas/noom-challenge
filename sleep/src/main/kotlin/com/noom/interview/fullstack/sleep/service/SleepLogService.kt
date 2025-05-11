@@ -9,6 +9,7 @@ import com.noom.interview.fullstack.sleep.service.exception.DuplicateResourceExc
 import com.noom.interview.fullstack.sleep.service.exception.InvalidInputException
 import com.noom.interview.fullstack.sleep.service.exception.SleepServiceException
 import com.noom.interview.fullstack.sleep.service.exception.UserNotFoundException
+import com.noom.interview.fullstack.sleep.service.exception.SleepLogNotFoundException
 import java.time.Duration
 import java.time.ZoneOffset
 import org.springframework.dao.DataIntegrityViolationException
@@ -81,6 +82,26 @@ class SleepLogService(
                     ex
             )
         }
+    }
+
+    /**
+     * Retrieves the most recent sleep log for a user.
+     *
+     * @param userId The ID of the user
+     * @return The most recent sleep log
+     * @throws UserNotFoundException If the user doesn't exist
+     * @throws SleepLogNotFoundException If no sleep logs exist for the user
+     */
+    fun getLastNightSleep(userId: Long): SleepLogResponse {
+        val user = userRepository.findById(userId).orElseThrow { UserNotFoundException(userId) }
+
+        val lastSleepLog =
+                sleepLogRepository.findFirstByUserOrderBySleepDateDesc(user)
+                        ?: throw SleepLogNotFoundException(
+                                "No sleep logs found for user ${user.id}."
+                        )
+
+        return mapToResponse(lastSleepLog)
     }
 
     private fun mapToResponse(sleepLog: SleepLog): SleepLogResponse {
