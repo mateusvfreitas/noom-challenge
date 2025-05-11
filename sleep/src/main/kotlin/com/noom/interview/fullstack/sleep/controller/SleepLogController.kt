@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.GetMapping
 
 /**
  * REST controller for sleep log operations.
@@ -35,5 +36,17 @@ class SleepLogController(private val sleepLogService: SleepLogService) {
     ): ResponseEntity<SleepLogResponse> {
         val response = sleepLogService.createSleepLog(userId, request)
         return ResponseEntity(response, HttpStatus.CREATED)
+    }
+
+    /**
+     * Retrieves the most recent sleep log for a user.
+     *
+     * @param userId The ID of the user
+     * @return The most recent sleep log with HTTP 200 (OK)
+     */
+    @GetMapping("/last-night")
+    fun getLastNightSleep(@PathVariable userId: Long): ResponseEntity<SleepLogResponse> {
+        val response = sleepLogService.getLastNightSleep(userId)
+        return ResponseEntity(response, HttpStatus.OK)
     }
 }
