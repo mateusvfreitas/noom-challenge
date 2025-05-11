@@ -1,0 +1,60 @@
+{
+  "info": {
+    "name": "Sleep Logger API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Sleep Log",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"timeInBedStart\": \"2023-11-14T22:00:00Z\",\n    \"timeInBedEnd\": \"2023-11-15T06:00:00Z\",\n    \"morningFeeling\": \"GOOD\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/users/1/sleep-logs",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "users", "1", "sleep-logs"]
+        },
+        "description": "Creates a new sleep log entry for user 1"
+      }
+    },
+    {
+      "name": "Get Last Night Sleep",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/api/users/1/sleep-logs/last-night",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "users", "1", "sleep-logs", "last-night"]
+        },
+        "description": "Retrieves the most recent sleep log for user 1"
+      }
+    },
+    {
+      "name": "Get 30-Day Stats",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/api/users/1/sleep-logs/stats",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "users", "1", "sleep-logs", "stats"]
+        },
+        "description": "Retrieves sleep statistics for the last 30 days for user 1"
+      }
+    }
+  ]
+}
