@@ -2,16 +2,17 @@ package com.noom.interview.fullstack.sleep.controller
 
 import com.noom.interview.fullstack.sleep.dto.SleepLogRequest
 import com.noom.interview.fullstack.sleep.dto.SleepLogResponse
+import com.noom.interview.fullstack.sleep.dto.SleepStatsResponse
 import com.noom.interview.fullstack.sleep.service.SleepLogService
 import javax.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.bind.annotation.GetMapping
 
 /**
  * REST controller for sleep log operations.
@@ -47,6 +48,18 @@ class SleepLogController(private val sleepLogService: SleepLogService) {
     @GetMapping("/last-night")
     fun getLastNightSleep(@PathVariable userId: Long): ResponseEntity<SleepLogResponse> {
         val response = sleepLogService.getLastNightSleep(userId)
+        return ResponseEntity(response, HttpStatus.OK)
+    }
+
+    /**
+     * Retrieves sleep statistics for the last 30 days.
+     *
+     * @param userId The ID of the user
+     * @return Sleep statistics with HTTP 200 (OK)
+     */
+    @GetMapping("/stats")
+    fun getThirtyDayStats(@PathVariable userId: Long): ResponseEntity<SleepStatsResponse> {
+        val response = sleepLogService.getThirtyDayStats(userId)
         return ResponseEntity(response, HttpStatus.OK)
     }
 }
