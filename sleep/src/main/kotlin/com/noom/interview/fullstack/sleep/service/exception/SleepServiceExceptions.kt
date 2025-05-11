@@ -11,3 +11,6 @@ class InvalidInputException(message: String) : RuntimeException(message)
 
 class SleepServiceException(message: String, cause: Throwable? = null) :
         RuntimeException(message, cause)
+
+class SleepLogNotFoundException(message: String) : ResourceNotFoundException(message)
+
