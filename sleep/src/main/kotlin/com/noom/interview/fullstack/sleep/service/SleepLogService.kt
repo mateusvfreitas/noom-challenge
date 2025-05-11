@@ -2,6 +2,7 @@ package com.noom.interview.fullstack.sleep.service
 
 import com.noom.interview.fullstack.sleep.dto.SleepLogRequest
 import com.noom.interview.fullstack.sleep.dto.SleepLogResponse
+import com.noom.interview.fullstack.sleep.dto.SleepStatsResponse
 import com.noom.interview.fullstack.sleep.entity.SleepLog
 import com.noom.interview.fullstack.sleep.repository.SleepLogRepository
 import com.noom.interview.fullstack.sleep.repository.UserRepository
@@ -10,8 +11,13 @@ import com.noom.interview.fullstack.sleep.service.exception.InvalidInputExceptio
 import com.noom.interview.fullstack.sleep.service.exception.SleepServiceException
 import com.noom.interview.fullstack.sleep.service.exception.UserNotFoundException
 import com.noom.interview.fullstack.sleep.service.exception.SleepLogNotFoundException
+import com.noom.interview.fullstack.sleep.domain.Feeling
 import java.time.Duration
 import java.time.ZoneOffset
+import java.time.LocalTime
+import java.time.Instant
+import java.time.ZoneId
+import java.time.LocalDate
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -102,6 +108,110 @@ class SleepLogService(
                         )
 
         return mapToResponse(lastSleepLog)
+    }
+
+    /**
+     * Calculates sleep statistics for the last 30 days.
+     *
+     * @param userId The ID of the user
+     * @return Sleep statistics for the last 30 days
+     * @throws UserNotFoundException If the user doesn't exist
+     */
+    fun getThirtyDayStats(userId: Long): SleepStatsResponse {
+        val user = userRepository.findById(userId).orElseThrow { UserNotFoundException(userId) }
+
+        val endDate = LocalDate.now(ZoneOffset.UTC)
+        val startDate = endDate.minusDays(29)
+
+        val sleepLogs = sleepLogRepository.findByUserAndSleepDateBetween(user, startDate, endDate)
+
+        val numberOfLogs = sleepLogs.size
+
+        val avgTimeInBedMinutes: Double? =
+                if (sleepLogs.isNotEmpty()) {
+                    sleepLogs.map { it.totalTimeInBedMinutes }.average()
+                } else {
+                    null
+                }
+
+        val avgBedTime: LocalTime? =
+                if (sleepLogs.isNotEmpty()) {
+                    calculateAverageLocalTime(
+                            sleepLogs.map { it.timeInBedStart },
+                            isBedTime = true,
+                            ZoneOffset.UTC
+                    )
+                } else {
+                    null
+                }
+
+        val avgWakeTime: LocalTime? =
+                if (sleepLogs.isNotEmpty()) {
+                    calculateAverageLocalTime(
+                            sleepLogs.map { it.timeInBedEnd },
+                            isBedTime = false,
+                            ZoneOffset.UTC
+                    )
+                } else {
+                    null
+                }
+
+        val feelingFrequencies: Map<Feeling, Int> =
+                if (sleepLogs.isNotEmpty()) {
+                    sleepLogs.groupBy { it.morningFeeling }.mapValues { it.value.size }
+                } else {
+                    emptyMap()
+                }
+
+        return SleepStatsResponse(
+                startDate = startDate,
+                endDate = endDate,
+                numberOfLogs = numberOfLogs,
+                averageTimeInBedMinutes = avgTimeInBedMinutes,
+                averageBedTime = avgBedTime,
+                averageWakeTime = avgWakeTime,
+                feelingFrequencies = feelingFrequencies
+        )
+    }
+
+    /**
+     * Calculates the average local time from a list of timestamps.
+     *
+     * @param timestamps List of timestamps to average
+     * @param zoneId The time zone to use for the calculation
+     * @return The average local time
+     */
+    private fun calculateAverageLocalTime(
+            instants: List<Instant>,
+            isBedTime: Boolean,
+            zoneId: ZoneId
+    ): LocalTime? {
+        if (instants.isEmpty()) {
+            return null
+        }
+
+        val secondsOfDay =
+                instants.map { instant ->
+                    var localTime = instant.atZone(zoneId).toLocalTime()
+                    var seconds = localTime.toSecondOfDay().toLong()
+
+                    // Handle bedtime wrap-around: if it's a bedtime and it's "early AM" (e.g.
+                    // before 4 AM),
+                    // shift it by 24 hours to correctly average with PM times.
+                    // This pivot (4 AM) might need adjustment based on typical user patterns.
+                    if (isBedTime && localTime.hour < 4) {
+                        seconds += 24 * 3600
+                    }
+                    seconds
+                }
+
+        var averageSeconds = secondsOfDay.average().toLong()
+
+        if (isBedTime) {
+            averageSeconds %= (24 * 3600)
+        }
+
+        return LocalTime.ofSecondOfDay(averageSeconds)
     }
 
     private fun mapToResponse(sleepLog: SleepLog): SleepLogResponse {
